@@ -6,6 +6,11 @@ import { EntryPoint, SimpleAccount, SimpleAccountFactory, TestCounter, TestCount
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { createAccount, deployEntryPoint, fund, getAccountAddress, getAccountInitCode } from "./testutils";
 import { fillAndSign } from "./UserOp";
+import { Interface } from "ethers/lib/utils";
+import { Artifact } from "hardhat/types";
+import { Artifacts } from "hardhat/internal/artifacts";
+import path from "path";
+
 describe.only("Session key", function () {
   let entryPoint: EntryPoint;
   let account: SimpleAccount;
@@ -98,7 +103,7 @@ describe.only("Session key", function () {
     });
   });
   describe("#create new User by Op", () => {
-    it("should success to call from valid session user", async () => {
+    it("should success to init new account", async () => {
       const newAccount = await getAccountAddress(owner.address, simpleAccountFactory, 1000);
       await fund(newAccount);
 
@@ -113,5 +118,48 @@ describe.only("Session key", function () {
       );
       await entryPoint.handleOps([op], otherAccount.address);
     });
+    it.only("should success to init new account and create session", async () => {
+      const newAccount = await getAccountAddress(owner.address, simpleAccountFactory, 1000);
+      await fund(newAccount);
+      // hoac dung (await account.populateTransaction.addSession(sessionUser.address, validUntil, validUntil + 1, sampleTotalAmount)).data; de lay duoc addSessiondata
+      const addSessionData = await encodeFunction("SimpleAccount", "addSession", [sessionUser.address, 0, 113399901350, sampleTotalAmount]);
+
+      const op = await fillAndSign(
+        {
+          sender: newAccount,
+          initCode: getAccountInitCode(owner.address, simpleAccountFactory, 1000),
+          callData: addSessionData,
+          callGasLimit: 100000,
+          verificationGasLimit: 500000,
+          preVerificationGas: 21000,
+          maxFeePerGas: 0,
+          maxPriorityFeePerGas: 0,
+          paymasterAndData: "0x",
+        },
+        owner,
+        entryPoint
+      );
+      console.log("🚀 ~ file: session.test.ts:136 ~ it.only ~ op:", op);
+      await entryPoint.handleOps([op], otherAccount.address);
+      // await account.connect(owner).addSession(sessionUser.address, currentTime, validUntil, sampleTotalAmount);
+      //session user can create tx
+      const newAccountContract: SimpleAccount = await ethers.getContractAt("SimpleAccount", newAccount);
+      const execTx = await newAccountContract.connect(sessionUser).execute(counter.address, "0", count.data!);
+      await expect(execTx).to.be.emit(newAccountContract, "Invoked").withArgs(counter.address, "0", count.data!);
+    });
   });
 });
+export async function encodeFunction(contract: string, func: string, params: any[]): Promise<string> {
+  const accountInterface = await getInterface(contract);
+  const args = params;
+  return accountInterface.encodeFunctionData(func, args);
+}
+export async function getInterface(name: string): Promise<Interface> {
+  const artifact = await getArtifact(name);
+  return new ethers.utils.Interface(artifact.abi);
+}
+export async function getArtifact(name: string): Promise<Artifact> {
+  const artifactsPath = !name.includes("/") ? path.resolve("./artifacts") : path.dirname(require.resolve(`${name}.json`));
+  const artifacts = new Artifacts(artifactsPath);
+  return artifacts.readArtifact(name.split("/").slice(-1)[0]);
+}
