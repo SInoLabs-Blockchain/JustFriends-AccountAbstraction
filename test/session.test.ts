@@ -127,11 +127,12 @@ describe.only("Session key", function () {
       const op = await fillAndSign(
         {
           sender: newAccount,
+          nonce: await entryPoint.getNonce(newAccount, 0),
           initCode: getAccountInitCode(owner.address, simpleAccountFactory, 1000),
           callData: addSessionData,
           callGasLimit: 100000,
           verificationGasLimit: 500000,
-          preVerificationGas: 21000,
+          preVerificationGas: 0,
           maxFeePerGas: 0,
           maxPriorityFeePerGas: 0,
           paymasterAndData: "0x",
