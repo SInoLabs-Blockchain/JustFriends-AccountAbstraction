@@ -60,13 +60,14 @@ const config: HardhatUserConfig = {
     sepolia: getNetwork("sepolia"),
     proxy: getNetwork1("http://localhost:8545"),
     baobab: {
-      url: "https://api.baobab.klaytn.net:8651",
+      url: "https://rpc.ankr.com/klaytn_testnet",
       chainId: 1001,
       accounts: [
         process.env.PRIVATE_KEY_DEV || "0x9a9c92b1a01fda896e0be2da17cdd41fccc9817d0aec0f12a08c088865702393",
         process.env.PRIVATE_KEY_DEV_SECOND || "0x5c554fca05636ebecf7081c575ba455b52ed41171f488d2818ca36d9a77825cd",
         process.env.PRIVATE_KEY_DEV_FACTORY || "74be19619d4af1ea43334801aba2a158b24b6647d130017f06d65f4eea7d2490",
         process.env.PRIVATE_KEY_DEV_EP_DEPLOYER || "b7138382a255f1e845fd886cab314fce2e0d8f18546d561bf7ea48a6f8a163b8",
+        "0x7146393417dec7220dd3514dc3652ad6e53f6e35abe19811df88d3e58c3495cc",
       ],
     },
   },
